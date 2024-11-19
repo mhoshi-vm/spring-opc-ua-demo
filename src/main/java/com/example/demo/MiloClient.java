@@ -36,7 +36,6 @@ class MiloClient {
 
         return OpcUaClient.create(new OpcUaClientConfigBuilder()
                 .setEndpoint(configPoint)
-
                 .build());
     }
 

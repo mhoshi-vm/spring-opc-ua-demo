@@ -57,13 +57,9 @@ class OpcUaClientService {
                 throw new RuntimeException(e);
             }
 
-
-            System.out.println(dataValue.toString());
             Variant variant = dataValue.getValue();
-
             Publisher publisher = new Publisher(this.namespaceId, nodeId, variant.getValue().toString());
             rabbitTemplate.convertAndSend("demo", "", publisher);
-            System.out.println(variant);
         });
 
 

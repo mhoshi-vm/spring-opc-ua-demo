@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: opc-ua
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: opc-ua
+  name: opc-ua
+  namespace: opc-ua
+spec:
+  ports:
+    - name: "4840"
+      port: 4840
+      protocol: TCP
+      targetPort: 4840
+  selector:
+    app: opc-ua
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: opc-ua-mgmt
+  name: opc-ua-mgmt
+  namespace: opc-ua
+spec:
+  ports:
+    - name: "8000"
+      port: 8000
+      protocol: TCP
+      nodePort: 30080
+  selector:
+    app: opc-ua
+  sessionAffinity: None
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: opc-ua
+  name: opc-ua
+  namespace: opc-ua
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opc-ua
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: opc-ua
+    spec:
+      containers:
+        - image: shogokobayashi/freeopcua-server-demo
+          imagePullPolicy: Always
+          name: opc-ua
+          ports:
+            - containerPort: 4840
+              protocol: TCP
+            - containerPort: 8000
+              protocol: TCP
+          resources: {}
+          env:
+            - name: TZ
+              value: Asia/Tokyo
+            - name: PGID
+              value: "1000"
+            - name: PUID
+              value: "1000"

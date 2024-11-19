@@ -1,14 +1,10 @@
 package com.example.demo.rabbitmq;
 
 import com.rabbitmq.http.client.Client;
-import com.rabbitmq.http.client.ClientParameters;
 import com.rabbitmq.http.client.domain.ShovelDetails;
 import com.rabbitmq.http.client.domain.ShovelInfo;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
-
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 
 @Component
 class RabbitInitializer {
@@ -33,6 +29,7 @@ class RabbitInitializer {
         shovelDetails.setDestinationExchange(this.rabbitMQShovelProperties.destinationExchange());
 
         var shovelInfo = new ShovelInfo(shovelName, shovelDetails);
+        client.deleteShovel("/", shovelName);
         client.declareShovel("/", shovelInfo);
     }
 

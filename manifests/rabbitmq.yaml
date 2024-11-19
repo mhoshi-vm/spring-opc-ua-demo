@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rabbitmq
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: rabbitmq
+  labels:
+    app: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      volumes:
+        - name: rabbitmq-enabled-plugins
+          configMap:
+            name: rabbitmq-enabled-plugins
+      containers:
+        - image:  rabbitmq:management
+          name: rabbitmq
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LANG
+              value: en_US.utf8
+            - name: LC_ALL
+              value: en_US.utf8
+            - name: JDK_JAVA_OPTIONS
+              value: '-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8'
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+          volumeMounts:
+            - mountPath: /etc/rabbitmq/enabled_plugins
+              name: rabbitmq-enabled-plugins
+              subPath: enabled_plugins
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: rabbitmq
+  labels:
+    app: rabbitmq
+spec:
+  selector:
+    app: rabbitmq
+  type: LoadBalancer
+  ports:
+    - name: amqp
+      port: 5672
+    - name: management
+      port: 15672
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-enabled-plugins
+  namespace: rabbitmq
+data:
+  enabled_plugins: '[rabbitmq_shovel, rabbitmq_shovel_management, rabbitmq_management].'

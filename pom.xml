@@ -68,6 +68,18 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<image>
+						<builder>paketobuildpacks/builder:tiny</builder>
+						<name>ghcr.io/mhoshi-vm/spring-opcua-demo:${project.version}</name>
+						<tags>ghcr.io/mhoshi-vm/spring-opcua-demo:latest</tags>
+						<publish>true</publish>
+						<env>
+							<BP_JVM_VERSION>17.*</BP_JVM_VERSION>
+
+						</env>
+					</image>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
