@@ -8,6 +8,7 @@ import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +17,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 
 @EnableConfigurationProperties(RabbitMQShovelProperties.class)
+@ConditionalOnProperty(value = "config.rabbitmq", havingValue = "true")
 @Configuration
 class RabbitMQConfiguration {
 

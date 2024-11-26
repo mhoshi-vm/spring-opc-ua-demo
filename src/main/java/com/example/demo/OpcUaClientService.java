@@ -7,9 +7,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.support.converter.MessageConverter;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 @Component
 class OpcUaClientService {
 
+    private final StreamBridge streamBridge;
 
     OpcUaClient client;
 
@@ -26,18 +25,14 @@ class OpcUaClientService {
 
     Integer[] nodeIds;
 
-    RabbitTemplate rabbitTemplate;
-
     public OpcUaClientService(MiloClient miloClient,
-                              @Value("${opcua.namespace}") Integer namespaceId,
-                              @Value("${opcua.node.id}") Integer[] nodeIds,
-                              RabbitTemplate rabbitTemplate,
-                              MessageConverter messageConverter) throws UaException, ExecutionException, InterruptedException {
+                              OpcUaClientProperties opcUaClientProperties,
+                              StreamBridge streamBridge) throws UaException, ExecutionException, InterruptedException {
         this.client = miloClient.opcUaClient();
-        this.namespaceId = namespaceId;
-        this.nodeIds = nodeIds;
-        this.rabbitTemplate = rabbitTemplate;
-        rabbitTemplate.setMessageConverter(messageConverter);
+        this.namespaceId = opcUaClientProperties.namespaceId();
+        this.nodeIds = opcUaClientProperties.nodeId();
+        this.streamBridge = streamBridge;
+
         client.connect();
     }
 
@@ -45,7 +40,7 @@ class OpcUaClientService {
         return new NodeId(namespaceId, Unsigned.uint(value));
     }
 
-    @Scheduled(fixedRate = 1000)
+    @Scheduled(fixedRateString = "#{@'opcua.client-com.example.demo.OpcUaClientProperties'.pollingRateMs}")
     void run() {
 
         Arrays.stream(nodeIds).forEach(nodeId -> {
@@ -59,7 +54,7 @@ class OpcUaClientService {
 
             Variant variant = dataValue.getValue();
             Publisher publisher = new Publisher(this.namespaceId, nodeId, variant.getValue().toString());
-            rabbitTemplate.convertAndSend("demo", "", publisher);
+            this.streamBridge.send("output", publisher);
         });
 
 

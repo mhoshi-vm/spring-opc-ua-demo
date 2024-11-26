@@ -4,9 +4,11 @@ import com.rabbitmq.http.client.Client;
 import com.rabbitmq.http.client.domain.ShovelDetails;
 import com.rabbitmq.http.client.domain.ShovelInfo;
 import jakarta.annotation.PostConstruct;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(value = "config.rabbitmq", havingValue = "true")
 class RabbitInitializer {
     Client client;
 
