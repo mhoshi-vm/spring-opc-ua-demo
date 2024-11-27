@@ -51,6 +51,11 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
@@ -97,6 +102,16 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <image>
+                        <imagePlatform>linux/amd64</imagePlatform>
+                        <name>ghcr.io/mhoshi-vm/spring-opc-ua-demo2:${project.version}</name>
+                        <tags>ghcr.io/mhoshi-vm/spring-opc-ua-demo2:latest</tags>
+                        <env>
+                            <BP_JVM_VERSION>17.*</BP_JVM_VERSION>
+                        </env>
+                    </image>
+                </configuration>
             </plugin>
         </plugins>
     </build>
