@@ -9,9 +9,6 @@ record OpcUaClientProperties(
         Integer namespaceId,
         @DefaultValue("2,4")
         Integer[] nodeId,
-        @DefaultValue("1000")
-        String pollingRateMs,
-
         @DefaultValue("0.0.0.0")
         String endpointUrl,
         @DefaultValue("4840")
