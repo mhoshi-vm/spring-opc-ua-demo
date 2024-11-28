@@ -5,6 +5,7 @@ import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
 import org.springframework.context.annotation.Bean;
@@ -21,39 +22,32 @@ class OpcUaClientService {
 
     OpcUaClient client;
 
-    Integer namespaceId;
+    List<NodeId> nodeIds;
 
-    Integer[] nodeIds;
+    List<Publisher> publishers;
 
     public OpcUaClientService(MiloClient miloClient,
                               OpcUaClientProperties opcUaClientProperties) throws UaException, ExecutionException, InterruptedException {
         this.client = miloClient.opcUaClient();
-        this.namespaceId = opcUaClientProperties.namespaceId();
-        this.nodeIds = opcUaClientProperties.nodeId();
 
+        this.nodeIds = new ArrayList<>();
+        Arrays.stream(opcUaClientProperties.nodeId()).forEach(nodeId -> nodeIds.add(new NodeId(opcUaClientProperties.namespaceId(), Unsigned.uint(nodeId))));
         client.connect();
-    }
-
-    NodeId GetNodeId(int value) {
-        return new NodeId(namespaceId, Unsigned.uint(value));
     }
 
     @Bean
     Supplier<List<Publisher>> run() {
 
         return () -> {
-            List<Publisher> publishers = new ArrayList<>();
-            Arrays.stream(nodeIds).forEach(nodeId -> {
+            nodeIds.forEach(nodeId -> {
                 DataValue dataValue;
                 try {
-                    dataValue = client.readValue(0, TimestampsToReturn.Both, GetNodeId(nodeId)).get();
-
+                    dataValue = client.readValue(0, TimestampsToReturn.Both, nodeId).get();
                 } catch (InterruptedException | ExecutionException e) {
                     throw new RuntimeException(e);
                 }
-
                 Variant variant = dataValue.getValue();
-                publishers.add(new Publisher(this.namespaceId, nodeId, variant.getValue().toString()));
+                publishers.add(new Publisher(nodeId.getNamespaceIndex(), nodeId.getIdentifier().toString(), variant.getValue().toString()));
             });
             return publishers;
         };
@@ -62,8 +56,8 @@ class OpcUaClientService {
 }
 
 record Publisher(
-        Integer namespaceId,
-        Integer nodeId,
+        UShort namespaceId,
+        String nodeId,
         String nodeValue
 ) {
 }
