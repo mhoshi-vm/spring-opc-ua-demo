@@ -7,17 +7,17 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
-import org.springframework.cloud.stream.function.StreamBridge;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 @Component
 class OpcUaClientService {
-
-    private final StreamBridge streamBridge;
 
     OpcUaClient client;
 
@@ -26,12 +26,10 @@ class OpcUaClientService {
     Integer[] nodeIds;
 
     public OpcUaClientService(MiloClient miloClient,
-                              OpcUaClientProperties opcUaClientProperties,
-                              StreamBridge streamBridge) throws UaException, ExecutionException, InterruptedException {
+                              OpcUaClientProperties opcUaClientProperties) throws UaException, ExecutionException, InterruptedException {
         this.client = miloClient.opcUaClient();
         this.namespaceId = opcUaClientProperties.namespaceId();
         this.nodeIds = opcUaClientProperties.nodeId();
-        this.streamBridge = streamBridge;
 
         client.connect();
     }
@@ -40,24 +38,25 @@ class OpcUaClientService {
         return new NodeId(namespaceId, Unsigned.uint(value));
     }
 
-    @Scheduled(fixedRateString = "#{@'opcua.client-com.example.demo.OpcUaClientProperties'.pollingRateMs}")
-    void run() {
+    @Bean
+    Supplier<List<Publisher>> run() {
 
-        Arrays.stream(nodeIds).forEach(nodeId -> {
-            DataValue dataValue;
-            try {
-                dataValue = client.readValue(0, TimestampsToReturn.Both, GetNodeId(nodeId)).get();
+        return () -> {
+            List<Publisher> publishers = new ArrayList<>();
+            Arrays.stream(nodeIds).forEach(nodeId -> {
+                DataValue dataValue;
+                try {
+                    dataValue = client.readValue(0, TimestampsToReturn.Both, GetNodeId(nodeId)).get();
 
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
-            }
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
 
-            Variant variant = dataValue.getValue();
-            Publisher publisher = new Publisher(this.namespaceId, nodeId, variant.getValue().toString());
-            this.streamBridge.send("output", publisher);
-        });
-
-
+                Variant variant = dataValue.getValue();
+                publishers.add(new Publisher(this.namespaceId, nodeId, variant.getValue().toString()));
+            });
+            return publishers;
+        };
     }
 
 }
