@@ -24,7 +24,7 @@ class OpcUaClientService {
 
     List<NodeId> nodeIds;
 
-    public OpcUaClientService(MiloClient miloClient,
+    OpcUaClientService(MiloClient miloClient,
                               OpcUaClientProperties opcUaClientProperties) throws UaException, ExecutionException, InterruptedException {
         this.client = miloClient.opcUaClient();
 
