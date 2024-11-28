@@ -24,14 +24,13 @@ class OpcUaClientService {
 
     List<NodeId> nodeIds;
 
-    List<Publisher> publishers;
-
     public OpcUaClientService(MiloClient miloClient,
                               OpcUaClientProperties opcUaClientProperties) throws UaException, ExecutionException, InterruptedException {
         this.client = miloClient.opcUaClient();
 
         this.nodeIds = new ArrayList<>();
         Arrays.stream(opcUaClientProperties.nodeId()).forEach(nodeId -> nodeIds.add(new NodeId(opcUaClientProperties.namespaceId(), Unsigned.uint(nodeId))));
+
         client.connect();
     }
 
@@ -39,6 +38,7 @@ class OpcUaClientService {
     Supplier<List<Publisher>> run() {
 
         return () -> {
+            List<Publisher> publishers = new ArrayList<>();
             nodeIds.forEach(nodeId -> {
                 DataValue dataValue;
                 try {
